@@ -1,16 +1,13 @@
-package ru.wtrn.starlineadapter.dto;
+package ru.wtrn.starlineadapter.model;
 
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
-
 @Data
 @Builder
-public class StarlineDeviceStatusDto {
+public class StarlineDevice {
     String alias;
     int engineTemp;
     int interiorTemp;
     int mileage;
-    Instant activityTimestamp;
 }
