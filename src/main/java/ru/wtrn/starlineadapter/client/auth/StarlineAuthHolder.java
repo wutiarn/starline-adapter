@@ -15,7 +15,9 @@ import ru.wtrn.starlineadapter.client.properties.StarlineApiProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class StarlineAuthHolder {
@@ -29,26 +31,29 @@ public class StarlineAuthHolder {
                 .rootUri(properties.getBaseUrl())
                 .build();
 
-        authCacheFile = Path.of(properties.getAuthCacheLocation());
-        if (Files.exists(authCacheFile)) {
-            cookieHeader = Files.readString(authCacheFile);
+        String authCacheLocation = properties.getAuthCacheLocation();
+        if (authCacheLocation != null) {
+            authCacheFile = Path.of(authCacheLocation);
+            if (Files.exists(authCacheFile)) {
+                cookieHeader = Files.readString(authCacheFile);
+            }
         }
     }
 
-    HttpRequest addAuthenticationToRequest(HttpRequest request) throws AuthenticationFailedException {
+    public HttpRequest addAuthenticationToRequest(HttpRequest request) throws AuthenticationFailedException, IOException {
         HttpRequestWrapper wrapper = new HttpRequestWrapper(request);
         wrapper.getHeaders().set(HttpHeaders.COOKIE, getCookieHeader());
         return wrapper;
     }
 
-    private synchronized String getCookieHeader() throws AuthenticationFailedException {
+    private synchronized String getCookieHeader() throws AuthenticationFailedException, IOException {
         if (cookieHeader == null) {
             return doRefreshAuthentication();
         }
         return cookieHeader;
     }
 
-    private synchronized String doRefreshAuthentication() throws AuthenticationFailedException {
+    private synchronized String doRefreshAuthentication() throws AuthenticationFailedException, IOException {
         StarlineLoginRequest loginRequest = StarlineLoginRequest.builder()
                 .username(properties.getUsername())
                 .password(properties.getPassword())
@@ -59,9 +64,27 @@ public class StarlineAuthHolder {
             throw AuthenticationFailedException.forResponse(response.getBody());
         }
 
-        List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
-        if (cookies == null) {
+        List<String> setCookieValue = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        if (setCookieValue == null) {
             throw new IllegalStateException("Successful login request did not return Set-Cookie headers");
         }
+
+        String cookieHeader = composeCookieHeader(setCookieValue);
+        this.cookieHeader = cookieHeader;
+
+        if (authCacheFile != null) {
+            Files.writeString(authCacheFile, cookieHeader);
+        }
+
+        log.info("Starline authentication refreshed");
+        return cookieHeader;
+    }
+
+    private String composeCookieHeader(List<String> setCookieValues) {
+        return setCookieValues.stream()
+                // Transform "lang=ru; path=/" -> "lang=ru"
+                .map(it -> Arrays.stream(it.split(";")).findFirst().orElseThrow())
+                // And join to one cookies string, that can be used as Cookies header value.
+                .collect(Collectors.joining("; "));
     }
 }
