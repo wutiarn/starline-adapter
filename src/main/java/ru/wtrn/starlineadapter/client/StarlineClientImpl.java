@@ -1,7 +1,7 @@
-package ru.wtrn.starlineadapter;
+package ru.wtrn.starlineadapter.client;
 
 import org.springframework.stereotype.Component;
-import ru.wtrn.starlineadapter.model.StarlineDevice;
+import ru.wtrn.starlineadapter.client.model.StarlineDevice;
 
 import java.util.List;
 

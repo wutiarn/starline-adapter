@@ -1,4 +1,4 @@
-package ru.wtrn.starlineadapter.model;
+package ru.wtrn.starlineadapter.client.model;
 
 import lombok.Builder;
 import lombok.Data;
