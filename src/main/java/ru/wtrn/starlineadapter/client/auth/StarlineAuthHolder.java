@@ -46,6 +46,11 @@ public class StarlineAuthHolder {
         return wrapper;
     }
 
+    public void refreshAuthentication() throws AuthenticationFailedException, IOException {
+        log.info("Forced authentication refresh started");
+        doRefreshAuthentication();
+    }
+
     private synchronized String getCookieHeader() throws AuthenticationFailedException, IOException {
         if (cookieHeader == null) {
             return doRefreshAuthentication();
