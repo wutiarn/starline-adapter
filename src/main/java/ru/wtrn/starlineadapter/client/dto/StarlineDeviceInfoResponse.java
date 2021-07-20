@@ -13,13 +13,13 @@ public class StarlineDeviceInfoResponse {
     Answer answer;
 
     @Data
-    static class Answer {
+    public static class Answer {
         List<Device> devices;
     }
 
     @Data
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    static class Device {
+    public static class Device {
         String alias;
         String deviceId;
         int ctemp;

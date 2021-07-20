@@ -7,7 +7,7 @@ import lombok.Data;
 @Builder
 public class StarlineDevice {
     String alias;
+    String deviceId;
     int engineTemp;
     int interiorTemp;
-    int mileage;
 }
