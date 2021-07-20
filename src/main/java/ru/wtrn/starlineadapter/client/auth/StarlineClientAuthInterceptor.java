@@ -13,7 +13,7 @@ import ru.wtrn.starlineadapter.client.properties.StarlineApiProperties;
 import java.io.IOException;
 
 public class StarlineClientAuthInterceptor implements ClientHttpRequestInterceptor {
-    private StarlineAuthHolder authHolder;
+    private final StarlineAuthHolder authHolder;
 
     public StarlineClientAuthInterceptor(StarlineApiProperties properties) throws IOException {
         authHolder = new StarlineAuthHolder(properties);
@@ -21,7 +21,7 @@ public class StarlineClientAuthInterceptor implements ClientHttpRequestIntercept
 
     @Override
     @SneakyThrows
-    public ClientHttpResponse intercept(
+    public @NotNull ClientHttpResponse intercept(
             @NotNull HttpRequest httpRequest,
             byte @NotNull [] body,
             ClientHttpRequestExecution execution
@@ -33,7 +33,7 @@ public class StarlineClientAuthInterceptor implements ClientHttpRequestIntercept
             return retryRequestWithRefreshedCredentials(httpRequest, body, execution);
         }
 
-        return null;
+        return response;
     }
 
     private boolean checkResponseRequiresAuthenticationRefresh(ClientHttpResponse response) throws IOException {
