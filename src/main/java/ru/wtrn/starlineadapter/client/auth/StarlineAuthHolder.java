@@ -21,12 +21,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class StarlineAuthHolder {
-    private StarlineApiProperties properties;
-    private RestTemplate httpClient;
+    private final StarlineApiProperties properties;
+    private final RestTemplate httpClient;
     private Path authCacheFile;
     private String cookieHeader;
 
     public StarlineAuthHolder(StarlineApiProperties properties) throws IOException {
+        this.properties = properties;
         httpClient = new RestTemplateBuilder()
                 .rootUri(properties.getBaseUrl())
                 .build();
