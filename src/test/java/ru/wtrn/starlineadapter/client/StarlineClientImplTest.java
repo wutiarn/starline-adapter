@@ -3,26 +3,29 @@ package ru.wtrn.starlineadapter.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.wtrn.starlineadapter.client.properties.StarlineApiProperties;
+import ru.wtrn.starlineadapter.support.BaseSpringBootTest;
 
 import java.io.File;
 import java.nio.file.Files;
 
-class StarlineClientImplTest {
+class StarlineClientImplTest extends BaseSpringBootTest {
 
-    private final StarlineClientImpl starlineClient;
-    private final File authTempFile;
+    private StarlineClientImpl starlineClient;
+    private File authTempFile;
 
+    @BeforeEach
     @SneakyThrows
-    public StarlineClientImplTest() {
+    void setup() {
         StarlineApiProperties properties = new StarlineApiProperties();
 
         authTempFile = File.createTempFile("test-starline-auth", ".txt");
         authTempFile.deleteOnExit();
 
         properties.setAuthCacheLocation(authTempFile.getAbsolutePath());
-        properties.setBaseUrl("http://localhost:8123/starline");
+        properties.setBaseUrl(String.format("%s/starline", wireMockServer.baseUrl()));
         properties.setUsername("test");
         properties.setPassword("testPassword");
 
