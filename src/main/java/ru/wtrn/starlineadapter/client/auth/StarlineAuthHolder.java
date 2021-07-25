@@ -36,7 +36,10 @@ public class StarlineAuthHolder {
         if (authCacheLocation != null) {
             authCacheFile = Path.of(authCacheLocation);
             if (Files.exists(authCacheFile)) {
-                cookieHeader = Files.readString(authCacheFile);
+                String cachedValue = Files.readString(authCacheFile);
+                if (!cachedValue.isBlank()) {
+                    cookieHeader = cachedValue;
+                }
             }
         }
     }
