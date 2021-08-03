@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import ru.wtrn.starlineadapter.client.dto.StarlineLoginRequest;
+import ru.wtrn.starlineadapter.client.exception.AuthenticationFailedException;
 import ru.wtrn.starlineadapter.client.model.StarlineDevice;
 import ru.wtrn.starlineadapter.client.properties.StarlineApiProperties;
 import ru.wtrn.starlineadapter.support.BaseSpringBootTest;
@@ -21,7 +22,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-class StarlineClientImplTest extends BaseSpringBootTest {
+class StarlineAuthTest extends BaseSpringBootTest {
 
     private StarlineClientImpl starlineClient;
     private File authTempFile;
@@ -87,5 +88,27 @@ class StarlineClientImplTest extends BaseSpringBootTest {
                 .build();
         wireMockServer.verify(1, postRequestedFor(urlEqualTo("/starline/rest/security/login"))
                 .withRequestBody(equalToJson(objectMapper.writeValueAsString(expectedLoginRequest))));
+    }
+
+    @Test
+    @SneakyThrows
+    void testIncorrectPassword() {
+        String loginFailedBody = ResourceUtils.getResourceFileAsString("/reference/starline/login/incorrectPassword.json");
+        wireMockServer.stubFor(post(urlEqualTo("/starline/rest/security/login"))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withHeader(HttpHeaders.SET_COOKIE,
+                                "lang=ru; path=/",
+                                "PHPSESSID=t39lmsvr6pqwerty633hmj9c68; path=/"
+                        )
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(loginFailedBody)
+                )
+        );
+        AuthenticationFailedException exception = Assertions.assertThrows(
+                AuthenticationFailedException.class,
+                () -> starlineClient.getDevices()
+        );
+        Assertions.assertEquals(loginFailedBody, exception.responseBody);
     }
 }
