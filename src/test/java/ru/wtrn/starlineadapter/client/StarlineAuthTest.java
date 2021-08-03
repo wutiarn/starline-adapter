@@ -28,7 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 class StarlineAuthTest extends BaseSpringBootTest {
 
     private StarlineClientImpl starlineClient;
-    private File authTempFile;
+    private Path authTempFilePath;
     private final StarlineApiProperties properties = new StarlineApiProperties();
     private final String expectedAuthCookie =
             "lang=ru; PHPSESSID=t39lmsvr6pqwerty633hmj9c68; userAgentId=b543aee857a543392c85c72bb3qwerty";
@@ -39,10 +39,11 @@ class StarlineAuthTest extends BaseSpringBootTest {
     @BeforeEach
     @SneakyThrows
     void setup() {
-        authTempFile = File.createTempFile("test-starline-auth", ".txt");
-        authTempFile.deleteOnExit();
+        File tempFile = File.createTempFile("test-starline-auth", ".txt");
+        tempFile.deleteOnExit();
+        authTempFilePath = tempFile.toPath();
 
-        properties.setAuthCacheLocation(authTempFile.getAbsolutePath());
+        properties.setAuthCacheLocation(authTempFilePath.toString());
         properties.setBaseUrl(String.format("%s/starline", wireMockServer.baseUrl()));
         properties.setUsername("test");
         properties.setPassword("testPassword");
@@ -80,7 +81,7 @@ class StarlineAuthTest extends BaseSpringBootTest {
         List<StarlineDevice> devices = starlineClient.getDevices();
         Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
 
-        String cachedAuth = Files.readString(authTempFile.toPath());
+        String cachedAuth = Files.readString(authTempFilePath);
         Assertions.assertEquals(
                 expectedAuthCookie,
                 cachedAuth
@@ -139,7 +140,7 @@ class StarlineAuthTest extends BaseSpringBootTest {
                         .withStatus(HttpStatus.OK.value())
                 )
         );
-        Files.writeString(authTempFile.toPath(), invalidCookie);
+        Files.writeString(authTempFilePath, invalidCookie);
         // Reinitialize starlineClient to make StarlineAuthHolder read modified authTempFile
         starlineClient = new StarlineClientImpl(properties, objectMapper);
 
@@ -174,7 +175,7 @@ class StarlineAuthTest extends BaseSpringBootTest {
                 )
         );
 
-        Files.writeString(authTempFile.toPath(), expectedAuthCookie);
+        Files.writeString(authTempFilePath, expectedAuthCookie);
         // Reinitialize starlineClient to make StarlineAuthHolder read modified authTempFile
         starlineClient = new StarlineClientImpl(properties, objectMapper);
 
@@ -245,7 +246,6 @@ class StarlineAuthTest extends BaseSpringBootTest {
                 )
         );
 
-        Path authTempFilePath = authTempFile.toPath();
         Files.delete(authTempFilePath);
         Assertions.assertFalse(Files.exists(authTempFilePath));
 
