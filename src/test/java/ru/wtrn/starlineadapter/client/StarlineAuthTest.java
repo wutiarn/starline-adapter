@@ -19,6 +19,8 @@ import ru.wtrn.starlineadapter.support.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -27,6 +29,8 @@ class StarlineAuthTest extends BaseSpringBootTest {
     private StarlineClientImpl starlineClient;
     private File authTempFile;
     private final StarlineApiProperties properties = new StarlineApiProperties();
+    private final String expectedAuthCookie =
+            "lang=ru; PHPSESSID=t39lmsvr6pqwerty633hmj9c68; userAgentId=b543aee857a543392c85c72bb3qwerty";
 
     @Autowired
     ObjectMapper objectMapper;
@@ -45,9 +49,7 @@ class StarlineAuthTest extends BaseSpringBootTest {
         starlineClient = new StarlineClientImpl(properties, objectMapper);
     }
 
-    @Test
-    @SneakyThrows
-    void testAuthInterceptorWorks() {
+    private void stubStarlineLoginEndpoint() {
         wireMockServer.stubFor(post(urlEqualTo("/starline/rest/security/login"))
                 .willReturn(aResponse()
                         .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -60,7 +62,12 @@ class StarlineAuthTest extends BaseSpringBootTest {
                         .withStatus(HttpStatus.NO_CONTENT.value())
                 )
         );
+    }
 
+    @Test
+    @SneakyThrows
+    void testAuthInterceptorWorks() {
+        stubStarlineLoginEndpoint();
         wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
                 .willReturn(aResponse()
                         .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -72,15 +79,14 @@ class StarlineAuthTest extends BaseSpringBootTest {
         List<StarlineDevice> devices = starlineClient.getDevices();
         Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
 
-        String expectedCookie = "lang=ru; PHPSESSID=t39lmsvr6pqwerty633hmj9c68; userAgentId=b543aee857a543392c85c72bb3qwerty";
         String cachedAuth = Files.readString(authTempFile.toPath());
         Assertions.assertEquals(
-                expectedCookie,
+                expectedAuthCookie,
                 cachedAuth
         );
 
         wireMockServer.verify(1, getRequestedFor(urlEqualTo("/starline/device"))
-                .withHeader(HttpHeaders.COOKIE, equalTo(expectedCookie)));
+                .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie)));
 
         StarlineLoginRequest expectedLoginRequest = StarlineLoginRequest.builder()
                 .username(properties.getUsername())
@@ -110,5 +116,53 @@ class StarlineAuthTest extends BaseSpringBootTest {
                 () -> starlineClient.getDevices()
         );
         Assertions.assertEquals(loginFailedBody, exception.responseBody);
+    }
+
+    @Test
+    @SneakyThrows
+    void testAuthExpired() {
+        stubStarlineLoginEndpoint();
+        String invalidCookie = "lang=ru";
+        wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
+                .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(ResourceUtils.getResourceFileAsString("/reference/starline/devices.json"))
+                )
+        );
+        wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
+                .withHeader(HttpHeaders.COOKIE, equalTo(invalidCookie))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE)
+                        .withStatus(HttpStatus.OK.value())
+                )
+        );
+        Files.writeString(authTempFile.toPath(), invalidCookie);
+        // Reinitialize starlineClient to make StarlineAuthHolder read modified authTempFile
+        starlineClient = new StarlineClientImpl(properties, objectMapper);
+
+        List<StarlineDevice> devices = starlineClient.getDevices();
+        Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
+
+        // /login endpoint should be called to refresh invalid authentication
+        wireMockServer.verify(1, postRequestedFor(urlEqualTo("/starline/rest/security/login")));
+
+        // /device endpoint should be called twice: first time with invalid auth, and then with refreshed one
+        wireMockServer.verify(2, getRequestedFor(urlEqualTo("/starline/device")));
+
+        // Check that these two requests were made with different cookie headers
+        Set<String> actualRequestCookies = wireMockServer.getServeEvents().getRequests().stream()
+                .filter(it -> it.getRequest().getUrl().equals("/starline/device"))
+                .map(it -> it.getRequest().getHeader(HttpHeaders.COOKIE))
+                .collect(Collectors.toSet());
+        Assertions.assertEquals(Set.of(expectedAuthCookie, invalidCookie), actualRequestCookies);
+    }
+
+
+    @Test
+    @SneakyThrows
+    void testCachedAuthUsed() {
+
     }
 }
