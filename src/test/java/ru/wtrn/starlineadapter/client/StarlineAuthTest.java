@@ -163,6 +163,27 @@ class StarlineAuthTest extends BaseSpringBootTest {
     @Test
     @SneakyThrows
     void testCachedAuthUsed() {
+        stubStarlineLoginEndpoint();
+        wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
+                .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(ResourceUtils.getResourceFileAsString("/reference/starline/devices.json"))
+                )
+        );
 
+        Files.writeString(authTempFile.toPath(), expectedAuthCookie);
+        // Reinitialize starlineClient to make StarlineAuthHolder read modified authTempFile
+        starlineClient = new StarlineClientImpl(properties, objectMapper);
+
+        List<StarlineDevice> devices = starlineClient.getDevices();
+        Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
+
+        // /login endpoint should not be called, since valid auth is cached
+        wireMockServer.verify(0, postRequestedFor(urlEqualTo("/starline/rest/security/login")));
+
+        wireMockServer.verify(1, getRequestedFor(urlEqualTo("/starline/device"))
+                .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie)));
     }
 }
