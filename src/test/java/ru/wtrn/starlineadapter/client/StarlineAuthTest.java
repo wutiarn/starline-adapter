@@ -18,6 +18,7 @@ import ru.wtrn.starlineadapter.support.ResourceUtils;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -232,4 +233,36 @@ class StarlineAuthTest extends BaseSpringBootTest {
                 .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie)));
     }
 
+    @Test
+    @SneakyThrows
+    void testCreatesAuthCacheFile() {
+        stubStarlineLoginEndpoint();
+        wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(ResourceUtils.getResourceFileAsString("/reference/starline/devices.json"))
+                )
+        );
+
+        Path authTempFilePath = authTempFile.toPath();
+        Files.delete(authTempFilePath);
+        Assertions.assertFalse(Files.exists(authTempFilePath));
+
+        // Reinitialize starlineClient
+        starlineClient = new StarlineClientImpl(properties, objectMapper);
+        // Check that auth cache file creation is lazy
+        Assertions.assertFalse(Files.exists(authTempFilePath));
+
+        try {
+            List<StarlineDevice> devices = starlineClient.getDevices();
+            Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
+
+            Assertions.assertTrue(Files.exists(authTempFilePath));
+            String cachedAuth = Files.readString(authTempFilePath);
+            Assertions.assertEquals(expectedAuthCookie, cachedAuth);
+        } finally {
+            Files.delete(authTempFilePath);
+        }
+    }
 }
