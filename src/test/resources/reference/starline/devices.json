@@ -1,0 +1,122 @@
+{
+  "result": 1,
+  "answer": {
+    "devices": [
+      {
+        "alias": "Сигнализация StarLine",
+        "device_id": 860920000000000,
+        "imei": "860920000000000",
+        "battery": 12.2,
+        "ua_url": "",
+        "ctemp": 40,
+        "etemp": 30,
+        "fw_version": "2.22.5",
+        "gps_lvl": 6,
+        "gsm_lvl": 28,
+        "mon_type": 2,
+        "phone": "+79810000000",
+        "status": 1,
+        "ts_activity": 1628004033,
+        "type": 44,
+        "typename": "S96v2",
+        "sn": "ES96 0000 000000",
+        "position": {
+          "x": 37.256995,
+          "y": 55.791471,
+          "ts": 1628000974,
+          "s": 0,
+          "dir": 0,
+          "sat_qty": 6,
+          "r": 0
+        },
+        "reg_date": 812000000,
+        "diag": {
+          "vin": "",
+          "can_version": "5.3.10.32577",
+          "can_descr": "22553"
+        },
+        "balance": {
+          "active": {
+            "value": 20,
+            "currency": "₽",
+            "operator": "МТС, Россия",
+            "ts": "2021-08-03 15:17:38",
+            "state": "normal"
+          }
+        },
+        "car_alr_state": {
+          "door": false,
+          "hbrake": false,
+          "hood": false,
+          "ign": false,
+          "pbrake": false,
+          "shock_h": false,
+          "shock_l": false,
+          "tilt": false,
+          "trunk": false
+        },
+        "car_state": {
+          "alarm": false,
+          "out": false,
+          "arm": true,
+          "arm_auth_wait": false,
+          "arm_moving_pb": false,
+          "door": false,
+          "hbrake": false,
+          "hijack": false,
+          "hood": false,
+          "ign": false,
+          "pbrake": true,
+          "r_start": false,
+          "run": false,
+          "trunk": false,
+          "valet": false,
+          "webasto": false,
+          "hfree": false,
+          "neutral": false,
+          "dvr": false
+        },
+        "functions": [
+          "adv_controls",
+          "adv_guard",
+          "adv_state",
+          "ble2",
+          "controls",
+          "eng_sensor",
+          "events",
+          "gsm",
+          "gsm_control",
+          "info",
+          "int_sensor",
+          "mon_cfg",
+          "obd_params",
+          "position",
+          "prolong_rstart",
+          "push",
+          "rstart_cfg",
+          "scoring",
+          "shock_cfg",
+          "state",
+          "tracking",
+          "xml_cfg"
+        ],
+        "controls": [],
+        "showInsuranceEvents": 1,
+        "shortParking": 5,
+        "longParking": 30,
+        "lowSpeedLimit": 60,
+        "highSpeedLimit": 90,
+        "services": {
+          "control": 1,
+          "settings": 0
+        },
+        "shared_for_me": false
+      }
+    ],
+    "shared_devices": [],
+    "code": 200,
+    "codestring": "OK",
+    "rpl_client_id": "A0E4CF701D950A6F1302E40000000000",
+    "nch_client_id": "A0E4CF701D950A6F1302E40000000000"
+  }
+}
