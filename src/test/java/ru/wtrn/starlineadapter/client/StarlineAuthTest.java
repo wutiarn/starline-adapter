@@ -186,4 +186,22 @@ class StarlineAuthTest extends BaseSpringBootTest {
         wireMockServer.verify(1, getRequestedFor(urlEqualTo("/starline/device"))
                 .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie)));
     }
+
+    @Test
+    @SneakyThrows
+    void testLoginResponseWithoutSetCookie() {
+        wireMockServer.stubFor(post(urlEqualTo("/starline/rest/security/login"))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withStatus(HttpStatus.NO_CONTENT.value())
+                )
+        );
+
+        IllegalStateException exception = Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> starlineClient.getDevices()
+        );
+
+        Assertions.assertEquals("Successful login request did not return Set-Cookie headers", exception.getMessage());
+    }
 }
