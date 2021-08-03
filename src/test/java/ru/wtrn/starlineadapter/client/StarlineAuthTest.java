@@ -204,4 +204,32 @@ class StarlineAuthTest extends BaseSpringBootTest {
 
         Assertions.assertEquals("Successful login request did not return Set-Cookie headers", exception.getMessage());
     }
+
+    @Test
+    @SneakyThrows
+    void testWorksWithoutCache() {
+        stubStarlineLoginEndpoint();
+        wireMockServer.stubFor(get(urlEqualTo("/starline/device"))
+                .willReturn(aResponse()
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .withStatus(HttpStatus.OK.value())
+                        .withBody(ResourceUtils.getResourceFileAsString("/reference/starline/devices.json"))
+                )
+        );
+
+        properties.setAuthCacheLocation(null);
+        // Reinitialize starlineClient to make StarlineAuthHolder uses updated properties
+        starlineClient = new StarlineClientImpl(properties, objectMapper);
+
+        List<StarlineDevice> devices = starlineClient.getDevices();
+        Assertions.assertEquals("860920000000000", devices.get(0).getDeviceId());
+
+        // /login endpoint should be called before /device
+        wireMockServer.verify(1, postRequestedFor(urlEqualTo("/starline/rest/security/login")));
+
+        // /device should be called exactly once, and with correct authentication
+        wireMockServer.verify(1, getRequestedFor(urlEqualTo("/starline/device"))
+                .withHeader(HttpHeaders.COOKIE, equalTo(expectedAuthCookie)));
+    }
+
 }
