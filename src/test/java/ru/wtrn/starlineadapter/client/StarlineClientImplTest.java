@@ -1,11 +1,11 @@
 package ru.wtrn.starlineadapter.client;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,9 +27,8 @@ class StarlineClientImplTest extends BaseSpringBootTest {
     private File authTempFile;
     private final StarlineApiProperties properties = new StarlineApiProperties();
 
-    ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+    @Autowired
+    ObjectMapper objectMapper;
 
     @BeforeEach
     @SneakyThrows

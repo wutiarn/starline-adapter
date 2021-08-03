@@ -1,6 +1,7 @@
 package ru.wtrn.starlineadapter.support;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -13,4 +14,9 @@ public abstract class BaseSpringBootTest {
     @Autowired
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     protected WireMockServer wireMockServer;
+
+    @AfterEach
+    void resetWireMockServer() {
+        wireMockServer.resetAll();
+    }
 }
